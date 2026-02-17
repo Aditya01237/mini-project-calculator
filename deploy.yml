@@ -1,0 +1,23 @@
+---
+- name: Deploy Calculator App
+  hosts: localhost   # Ensure this matches your inventory file header
+  tasks:
+    - name: Pull Docker Image
+      docker_image:
+        name: adityapareek01/calculator-app  # CHANGED: Must match Jenkinsfile
+        tag: latest
+        source: pull
+
+    - name: Stop Old Container
+      docker_container:
+        name: calculator-instance
+        state: absent
+      ignore_errors: yes  # Prevents error if container doesn't exist yet
+
+    - name: Run Calculator Container
+      docker_container:
+        name: calculator-instance
+        image: adityapareek01/calculator-app:latest # CHANGED: Must match Jenkinsfile
+        state: started
+        interactive: yes
+        tty: yes
