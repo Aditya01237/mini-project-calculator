@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_USER = 'pareekaditya01'
+        DOCKER_HUB_USER = 'adityapareek01'
         DOCKER_IMAGE_NAME = 'calculator-app'
         GITHUB_REPO_URL = 'https://github.com/Aditya01237/mini-project-calculator.git'
         
