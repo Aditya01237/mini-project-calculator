@@ -2,48 +2,41 @@ pipeline {
     agent any
 
     environment {
-        // Your Docker Hub details
         DOCKER_HUB_USER = 'pareekaditya01'
         DOCKER_IMAGE_NAME = 'calculator-app'
-        // Your GitHub URL
         GITHUB_REPO_URL = 'https://github.com/Aditya01237/mini-project-calculator.git'
+        
+        // This automatically pulls the username/password for the ID 'DockerHubCred'
+        // and stores them in DOCKER_CREDS_USR and DOCKER_CREDS_PSW
+        DOCKER_CREDS = credentials('DockerHubCred')
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Pulls code from your repository
                 git branch: 'master', url: "${GITHUB_REPO_URL}"
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    // Builds the image using the Docker Pipeline plugin syntax
-                    // Matches Screenshot 10.40.54
-                    docker.build("${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:latest", '.')
-                }
+                // "sh" runs a standard shell command
+                sh "docker build -t ${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:latest ."
             }
         }
 
         stage('Push Docker Images') {
             steps {
-                script {
-                    // Logs in using the 'DockerHubCred' ID we created earlier
-                    // Matches Screenshot 10.41.09
-                    docker.withRegistry('', 'DockerHubCred') {
-                        sh "docker push ${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:latest"
-                    }
-                }
+                // Standard docker login using the secure credentials
+                sh 'echo $DOCKER_CREDS_PSW | docker login -u $DOCKER_CREDS_USR --password-stdin'
+                sh "docker push ${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:latest"
             }
         }
 
         stage('Run Ansible Playbook') {
             steps {
-                // Runs the playbook using the Ansible plugin
-                // Matches Screenshot 10.41.17
-                ansiblePlaybook installation: 'ansible', playbook: 'deploy.yml', inventory: 'inventory'
+                // Run ansible directly from shell to avoid needing the Ansible plugin
+                sh "ansible-playbook -i inventory deploy.yml"
             }
         }
     }
