@@ -2,13 +2,11 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_HUB_USER = 'adityapareek01'
-        DOCKER_IMAGE_NAME = 'calculator-app'
+        // 1. match your DockerHub username exactly
+        DOCKER_HUB_USER = 'adityapareek01' 
+        // 2. This name must match what is in deploy.yml later
+        DOCKER_IMAGE_NAME = 'calculator-app' 
         GITHUB_REPO_URL = 'https://github.com/Aditya01237/mini-project-calculator.git'
-        
-        // This automatically pulls the username/password for the ID 'DockerHubCred'
-        // and stores them in DOCKER_CREDS_USR and DOCKER_CREDS_PSW
-        DOCKER_CREDS = credentials('DockerHubCred')
     }
 
     stages {
@@ -20,22 +18,23 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                // "sh" runs a standard shell command
                 sh "docker build -t ${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:latest ."
             }
         }
 
         stage('Push Docker Images') {
             steps {
-                // Standard docker login using the secure credentials
-                sh 'echo $DOCKER_CREDS_PSW | docker login -u $DOCKER_CREDS_USR --password-stdin'
-                sh "docker push ${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:latest"
+                // FIXED: Using withCredentials block for safety
+                withCredentials([usernamePassword(credentialsId: 'DockerHubCred', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh 'echo $PASS | docker login -u $USER --password-stdin'
+                    sh "docker push ${DOCKER_HUB_USER}/${DOCKER_IMAGE_NAME}:latest"
+                }
             }
         }
 
         stage('Run Ansible Playbook') {
             steps {
-                // Run ansible directly from shell to avoid needing the Ansible plugin
+                // Ensure we use the inventory file we created
                 sh "ansible-playbook -i inventory deploy.yml"
             }
         }
